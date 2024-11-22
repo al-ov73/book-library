@@ -6,35 +6,44 @@ class BookRepository:
     STORAGE_PATH = 'src/library.json'
 
     @staticmethod
-    def _dict_to_book(input_book: dict) -> Book | None:
-        try:
-            return Book(
-                id=input_book["id"],
-                title=input_book["title"],
-                author=input_book["author"],
-                year=input_book["year"],
-                status=input_book["status"]
-            )
-        except KeyError:
-            return None
+    def _lib_to_books(library: list[dict]) -> list[Book]:
+        books_lib = []
+        for book in library:
+            try:
+                books_lib.append(
+                    Book(
+                        id=book["id"],
+                        title=book["title"],
+                        author=book["author"],
+                        year=book["year"],
+                        status=book["status"]
+                    ) 
+                )
+            except KeyError:
+                continue
+        return books_lib
+
 
     @staticmethod
-    def _book_to_dict(input_book: Book) -> dict:
-        print(input_book.status)
-        return {
-            "id": input_book.id,
-            "title": input_book.title,
-            "author": input_book.author,
-            "year": input_book.year,
-            "status": input_book,
-        }
+    def _lib_to_dict(library: list[Book]) -> list[dict]:
+        dict_lib = []
+        for book in library:
+            dict_lib.append(
+                {
+                    "id": book.id,
+                    "title": book.title,
+                    "author": book.author,
+                    "year": book.year,
+                    "status": book.status,
+                }
+            )
+        return dict_lib
 
     def get_all_books(self) -> list[Book]:
         try:
             with open(self.STORAGE_PATH, "r", encoding="utf-8") as f:
                 books_list = json.load(f)
-                converted_books = map(self._dict_to_book, books_list)
-                return list(filter(None, converted_books))
+                return self._lib_to_books(books_list)
         except FileNotFoundError:
             return []
         except json.decoder.JSONDecodeError:
@@ -43,15 +52,14 @@ class BookRepository:
     def add_book(self, book: Book):
         library = self.get_all_books()
         library.append(book)
-        updated_lib_dict = list(map(self._book_to_dict, library))
+        updated_lib_dict = self._lib_to_dict(library)
         with open(self.STORAGE_PATH, "w", encoding="utf-8") as file:
-            json.dump(updated_lib_dict, file)
+            json.dump(updated_lib_dict, file, ensure_ascii=False)
         print(f"Добавлена книга с id: {book.id}")
             
     def get_next_id(self) -> int:
         library = self.get_all_books()
         try:
-            print(library)
             last_book = library[-1]
             return last_book.id + 1
         except IndexError:
@@ -59,21 +67,39 @@ class BookRepository:
         
     def delete_book(self, input_id: int) -> None:
         library = self.get_all_books()
-        updated_lib = filter(lambda book: book.id != input_id, library)
-        updated_lib_dict = list(map(self._book_to_dict, updated_lib))
-        with open(self.STORAGE_PATH, "w", encoding="utf-8") as file:
-            json.dump(updated_lib_dict, file)
-        print(f"Удалена книга с id: {input_id}")
+        updated_lib = list(filter(lambda book: book.id != input_id, library))
+        if len(library) == len(list(updated_lib)):
+            print("Такой книги не существует!")
+        else:
+            updated_lib_dict = self._lib_to_dict(updated_lib)
+            with open(self.STORAGE_PATH, "w", encoding="utf-8") as file:
+                json.dump(updated_lib_dict, file, ensure_ascii=False)
+            print(f"Удалена книга с id: {input_id}")
 
     def book_status_change(self, input_id: int) -> None:
         library = self.get_all_books()
-        book = [book for book in library if book.id == input_id][0]
-        # IndexError:
-        index = library.index(book)
-        before = book.status
-        book.status = "В наличии" if book.status == "Выдана" else "Выдана"
-        print(f"Статус книги с id: {book.id} изменен с {before} на {book.status}")
-        library[index] = book
-        updated_lib_dict = list(map(self._book_to_dict, library))
-        with open(self.STORAGE_PATH, "w", encoding="utf-8") as file:
-            json.dump(updated_lib_dict, file)
+        try:
+            book = [book for book in library if book.id == input_id][0]
+            index = library.index(book)
+            before = book.status
+            book.status = "В наличии" if book.status == "Выдана" else "Выдана"
+            print(f"Статус книги с id: {book.id} изменен с \"{before}\" на \"{book.status}\"")
+            library[index] = book
+            updated_lib_dict = self._lib_to_dict(library)
+            with open(self.STORAGE_PATH, "w", encoding="utf-8") as file:
+                json.dump(updated_lib_dict, file, ensure_ascii=False)
+        except IndexError:
+            print("Такой книги не существует")
+            
+    def search_book_by(self, field_name: str, value: str | int) -> list[Book]:
+        fields = {
+            "название": "title",
+            "автор": "author",
+            "год": "year",
+        }
+        library = self.get_all_books()
+        find_books = []
+        for book in library:
+            if getattr(book, fields[field_name]) == value:
+                find_books.append(book)
+        return find_books

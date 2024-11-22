@@ -34,13 +34,20 @@ def add_book_command() -> Book:
         title=title,
         author=author,
         year=int(year),
-        status=STATUS.stock,
+        status=STATUS.stock.value,
     )
 
 def delete_command() -> int:
-    book_id = input("Введите id книги, которую хотите удалить")
+    book_id = input("Введите id книги, которую хотите удалить: ")
     return int(book_id)
 
 def book_issue_command() -> int:
     book_id = input("Введите id книги, у которой хотите поменять статус: ")
     return int(book_id)
+
+def book_search_command() -> tuple[str]:
+    field = input("Введите поле, по которому ищем (название, автор, год): ")
+    value = input("Введите значение: ")
+    if field == "год":
+        value = int(value)
+    return field, value
