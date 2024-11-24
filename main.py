@@ -6,6 +6,6 @@ if __name__ == "__main__":
     welcome_msg()
     try:
         start_app()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt or EOFError:
         print("\nДо свидания!")
         exit()

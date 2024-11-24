@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 
+
 class STATUS(Enum):
     stock = "В наличии"
     issued = "Выдана"
+
 
 @dataclass
 class Book:
@@ -12,4 +14,3 @@ class Book:
     author: str
     year: int
     status: STATUS
-           
